@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartVision — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #050a0e;
+    --surface: #0d1821;
+    --border:  #1a2a3a;
+    --accent:  #00e5a0;
+    --accent2: #0099ff;
+    --warn:    #ff6b35;
+    --text:    #e8f4f8;
+    --muted:   #5a7a8a;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* sidebar layout */
+  .layout { display: flex; min-height: 100vh; }
+
+  aside {
+    width: 230px;
+    min-width: 230px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon { width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem; }
+  .logo-text { font-size:.95rem;font-weight:700;letter-spacing:-.02em; }
+  .logo-sub  { font-size:.65rem;color:var(--muted); }
+  .sidebar-user {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: .8rem;
+  }
+  .sidebar-user .sname { font-weight: 600; margin-bottom: 2px; }
+  .sidebar-user .srole { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: .7rem; }
+
+  nav.sidebar-nav { padding: 12px 10px; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all .2s;
+    text-decoration: none;
+    border: none; background: none; font-family: inherit; width: 100%;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.04); color: var(--text); }
+  .nav-item.active { background: rgba(0,229,160,.1); color: var(--accent); }
+  .nav-icon { font-size: 1rem; }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-logout {
+    width: 100%;
+    padding: 10px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: .825rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-logout:hover { border-color: #ff4444; color: #ff4444; }
+
+  /* main content */
+  main {
+    flex: 1;
+    padding: 28px;
+    overflow-y: auto;
+    max-width: 1200px;
+  }
+
+  .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -.03em; margin-bottom: 4px; }
+  .page-sub   { font-size: .875rem; color: var(--muted); margin-bottom: 28px; }
+
+  /* stat cards */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,229,160,.04), transparent);
+    pointer-events: none;
+  }
+  .stat-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
+  .stat-num   { font-size: 2rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+  .stat-unit  { font-size: .75rem; color: var(--muted); margin-top: 3px; }
+  .stat-dot   { position: absolute; top: 16px; right: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* content grid */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  @media (max-width:900px) { .content-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title { font-size: .95rem; font-weight: 600; }
+  .card-badge {
+    font-size: .7rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: rgba(0,229,160,.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,.2);
+  }
+  .card-body { padding: 18px 20px; }
+
+  /* YOLO stream */
+  .stream-wrap {
+    position: relative;
+    background: #000;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #yoloFeed {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .stream-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(5,10,14,.9);
+    color: var(--muted);
+    font-size: .875rem;
+    text-align: center;
+  }
+  .stream-overlay.hidden { display: none; }
+  .stream-error-icon { font-size: 2.5rem; }
+
+  /* bench status grid */
+  .bench-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .bench-item {
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    transition: all .3s;
+  }
+  .bench-item.active {
+    border-color: rgba(0,229,160,.4);
+    background: rgba(0,229,160,.06);
+  }
+  .bench-name { font-size: .825rem; font-weight: 500; }
+  .bench-side { font-size: .7rem; color: var(--muted); }
+  .bench-light {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem;
+    transition: all .3s;
+  }
+  .bench-item.active .bench-light { background: rgba(0,229,160,.2); box-shadow: 0 0 10px rgba(0,229,160,.4); }
+
+  /* activity log */
+  .log-list { list-style: none; max-height: 260px; overflow-y: auto; }
+  .log-list::-webkit-scrollbar { width: 4px; }
+  .log-list::-webkit-scrollbar-track { background: transparent; }
+  .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .log-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .log-dot.green { background: var(--accent); }
+  .log-dot.red   { background: #ff4444; }
+  .log-dot.blue  { background: var(--accent2); }
+  .log-text  { font-size: .825rem; line-height: 1.4; }
+  .log-time  { font-size: .7rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; white-space: nowrap; margin-left: auto; }
+
+  .online-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .72rem; padding: 4px 10px; border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .online-pill.on  { background: rgba(0,229,160,.1); border: 1px solid rgba(0,229,160,.3); color: var(--accent); }
+  .online-pill.off { background: rgba(255,68,68,.1);  border: 1px solid rgba(255,68,68,.3);  color: #ff4444; }
+  .online-pill::before { content: '●'; font-size: .45rem; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside>
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">SmartVision</div>
+        <div class="logo-sub">Energy Detection</div>
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="sname" id="sidebarName">Loading…</div>
+      <div class="srole">USER</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" href="/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="/"><span class="nav-icon">🏠</span> Home</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">⏻ Log Out</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Live detection feed and system status</div>
+
+    <!-- Stats row -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-dot"></div>
+        <div class="stat-label">People Detected</div>
+        <div class="stat-num" id="sPeople">0</div>
+        <div class="stat-unit">right now</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Lights Active</div>
+        <div class="stat-num" id="sLights">0</div>
+        <div class="stat-unit">zones lit</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">System</div>
+        <div style="margin-top:8px">
+          <div class="online-pill off" id="sSystem">OFFLINE</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Last Update</div>
+        <div class="stat-num" style="font-size:1.1rem" id="sTime">—</div>
+        <div class="stat-unit">timestamp</div>
+      </div>
+    </div>
+
+    <!-- Content grid -->
+    <div class="content-grid">
+      <!-- Live feed -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎥 Live Detection Feed</span>
+          <span class="card-badge" id="streamBadge">CONNECTING…</span>
+        </div>
+        <div class="stream-wrap">
+          <img id="yoloFeed" src="" alt="Detection feed" onerror="onStreamError()" onload="onStreamLoad()">
+          <div class="stream-overlay" id="streamOverlay">
+            <div class="stream-error-icon">📷</div>
+            <div>Connecting to detection stream…</div>
+            <div style="font-size:.75rem;color:var(--muted)">Make sure the Flask server is running</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bench status -->
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <span class="card-title">💡 Bench Lights</span>
+          </div>
+          <div class="card-body">
+            <div class="bench-grid" id="benchGrid">
+              <!-- injected by JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📋 Activity Log</span>
+          </div>
+          <div class="card-body" style="padding:8px 16px">
+            <ul class="log-list" id="activityLog">
+              <li class="log-item">
+                <span class="log-dot blue"></span>
+                <span class="log-text">Dashboard loaded</span>
+                <span class="log-time" id="loadTime">—</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const BENCHES = [
+  { id: 'b1l', label: 'Bench 1', side: 'Left' },
+  { id: 'b1r', label: 'Bench 1', side: 'Right' },
+  { id: 'b2l', label: 'Bench 2', side: 'Left' },
+  { id: 'b2r', label: 'Bench 2', side: 'Right' },
+  { id: 'b3l', label: 'Bench 3', side: 'Left' },
+  { id: 'b3r', label: 'Bench 3', side: 'Right' },
+  { id: 'b4l', label: 'Bench 4', side: 'Left' },
+  { id: 'b4r', label: 'Bench 4', side: 'Right' },
+];
+
+// Build bench grid
+const benchGrid = document.getElementById('benchGrid');
+BENCHES.forEach(b => {
+  const div = document.createElement('div');
+  div.className = 'bench-item';
+  div.id = b.id;
+  div.innerHTML = `
+    <div>
+      <div class="bench-name">${b.label}</div>
+      <div class="bench-side">${b.side}</div>
+    </div>
+    <div class="bench-light">💡</div>
+  `;
+  benchGrid.appendChild(div);
+});
+
+document.getElementById('loadTime').textContent = new Date().toLocaleTimeString();
+
+// ── Auth check ─────────────────────────────────────────────────
+async function init() {
+  try {
+    const r = await fetch('/api/auth/me');
+    if (!r.ok) { window.location.href = '/'; return; }
+    const d = await r.json();
+    document.getElementById('sidebarName').textContent = d.name;
+    if (d.role === 'admin') {
+      document.querySelector('.sidebar-nav').insertAdjacentHTML('afterbegin',
+        '<a class="nav-item" href="/admin"><span class="nav-icon">🛡️</span> Admin Panel</a>');
+    }
+  } catch { window.location.href = '/'; }
+}
+init();
+
+// ── Stream ─────────────────────────────────────────────────────
+const feedEl = document.getElementById('yoloFeed');
+feedEl.src   = '/api/stream/detection?' + Date.now();
+
+function onStreamLoad() {
+  document.getElementById('streamOverlay').classList.add('hidden');
+  document.getElementById('streamBadge').textContent = 'LIVE';
+  document.getElementById('streamBadge').style.background = 'rgba(0,229,160,.15)';
+}
+function onStreamError() {
+  document.getElementById('streamOverlay').classList.remove('hidden');
+  document.getElementById('streamBadge').textContent = 'OFFLINE';
+  document.getElementById('streamBadge').style.background = 'rgba(255,68,68,.15)';
+  document.getElementById('streamBadge').style.color = '#ff4444';
+  setTimeout(() => { feedEl.src = '/api/stream/detection?' + Date.now(); }, 5000);
+}
+
+// ── Status poll ────────────────────────────────────────────────
+function addLog(text, color = 'blue') {
+  const list = document.getElementById('activityLog');
+  const t    = new Date().toLocaleTimeString();
+  const li   = document.createElement('li');
+  li.className = 'log-item';
+  li.innerHTML = `<span class="log-dot ${color}"></span><span class="log-text">${text}</span><span class="log-time">${t}</span>`;
+  list.insertBefore(li, list.firstChild);
+  if (list.children.length > 20) list.removeChild(list.lastChild);
+}
+
+let prevPeople = 0;
+let prevOnline = null;
+
+async function pollStatus() {
+  try {
+    const r = await fetch('/api/system/status');
+    if (!r.ok) return;
+    const d = await r.json();
+
+    document.getElementById('sPeople').textContent = d.people ?? 0;
+    document.getElementById('sLights').textContent = d.lights_on ?? 0;
+    document.getElementById('sTime').textContent   = new Date().toLocaleTimeString();
+
+    const sys = document.getElementById('sSystem');
+    sys.textContent = d.online ? 'ONLINE' : 'OFFLINE';
+    sys.className   = `online-pill ${d.online ? 'on' : 'off'}`;
+
+    if (prevOnline !== null && d.online !== prevOnline) {
+      addLog(`System went ${d.online ? 'ONLINE' : 'OFFLINE'}`, d.online ? 'green' : 'red');
+    }
+    if (d.people > prevPeople) addLog(`${d.people} person${d.people > 1 ? 's' : ''} detected`, 'green');
+    if (d.people === 0 && prevPeople > 0) addLog('No people detected — lights off', 'red');
+
+    prevPeople = d.people;
+    prevOnline = d.online;
+  } catch {}
+}
+pollStatus();
+setInterval(pollStatus, 3000);
+
+// ── Logout ─────────────────────────────────────────────────────
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/';
+}
+</script>
+</body>
+</html>

@@ -82,7 +82,7 @@ app.use(session({
   },
 }));
 
-app.use(express.static(path.join(__dirname, '..', 'frontend', 'public')));
+app.use(express.static(path.join(__dirname, 'frontend', 'public')));
 
 // ── Rate Limiters ─────────────────────────────────────────────────
 const otpLimiter = rateLimit({
@@ -355,9 +355,9 @@ app.get('/api/system/status', requireAuth, async (req, res) => {
 });
 
 // ── HTML Page Routes ──────────────────────────────────────────────
-app.get('/',          (_, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'views', 'index.html')));
-app.get('/dashboard', (_, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'views', 'dashboard.html')));
-app.get('/admin',     (_, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'views', 'admin.html')));
+app.get('/',          (_, res) => res.sendFile(path.join(__dirname, 'frontend', 'views', 'index.html')));
+app.get('/dashboard', (_, res) => res.sendFile(path.join(__dirname, 'frontend', 'views', 'dashboard.html')));
+app.get('/admin',     (_, res) => res.sendFile(path.join(__dirname, 'frontend', 'views', 'admin.html')));
 
 // ── Graceful Shutdown ────────────────────────────────────────────
 process.on('SIGINT', async () => {
