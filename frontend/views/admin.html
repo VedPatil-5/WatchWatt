@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartVision — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #050a0e;
+    --surface: #0d1821;
+    --border:  #1a2a3a;
+    --accent:  #00e5a0;
+    --accent2: #0099ff;
+    --warn:    #ff6b35;
+    --text:    #e8f4f8;
+    --muted:   #5a7a8a;
+    --error:   #ff4444;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+
+  aside {
+    width: 230px; min-width: 230px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon { width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center; }
+  .logo-text { font-size:.95rem;font-weight:700;letter-spacing:-.02em; }
+  .logo-sub  { font-size:.65rem;color:var(--muted); }
+  .sidebar-user { padding:16px 20px;border-bottom:1px solid var(--border);font-size:.8rem; }
+  .sidebar-user .sname { font-weight:600;margin-bottom:2px; }
+  .sidebar-user .srole { color:var(--warn);font-family:'JetBrains Mono',monospace;font-size:.7rem; }
+  nav.sidebar-nav { padding:12px 10px;flex:1; }
+  .nav-item {
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:10px;cursor:pointer;
+    font-size:.875rem;font-weight:500;color:var(--muted);
+    transition:all .2s;text-decoration:none;
+    border:none;background:none;font-family:inherit;width:100%;
+  }
+  .nav-item:hover { background:rgba(255,255,255,.04);color:var(--text); }
+  .nav-item.active { background:rgba(255,107,53,.1);color:var(--warn); }
+  .sidebar-footer { padding:16px;border-top:1px solid var(--border); }
+  .btn-logout {
+    width:100%;padding:10px;border-radius:9px;border:1px solid var(--border);
+    background:transparent;color:var(--muted);font-size:.825rem;cursor:pointer;
+    font-family:inherit;transition:all .2s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .btn-logout:hover { border-color:var(--error);color:var(--error); }
+
+  main { flex:1;padding:28px;overflow-y:auto;max-width:1200px; }
+  .page-header { display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px; }
+  .page-title { font-size:1.5rem;font-weight:700;letter-spacing:-.03em;margin-bottom:4px; }
+  .page-sub   { font-size:.875rem;color:var(--muted); }
+
+  .stat-row { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:28px; }
+  .stat-card { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px; }
+  .stat-label { font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px; }
+  .stat-num   { font-size:2rem;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent); }
+
+  .tabs { display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0; }
+  .tab-btn {
+    padding:10px 18px;border-radius:10px 10px 0 0;cursor:pointer;
+    font-size:.875rem;font-weight:500;border:1px solid transparent;
+    background:transparent;color:var(--muted);font-family:inherit;
+    transition:all .2s;border-bottom:none;
+  }
+  .tab-btn.active { background:var(--surface);border-color:var(--border);border-bottom-color:var(--surface);color:var(--text); }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  .card { background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden; }
+  .card-header { padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap; }
+  .card-title { font-size:.95rem;font-weight:600; }
+
+  .search-bar {
+    padding:8px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);
+    border-radius:9px;color:var(--text);font-size:.825rem;font-family:inherit;outline:none;
+    width:220px;transition:border-color .2s;
+  }
+  .search-bar:focus { border-color:var(--accent); }
+
+  /* table */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%;border-collapse:collapse; }
+  th {
+    padding:11px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  td {
+    padding:13px 16px;font-size:.875rem;border-bottom:1px solid rgba(26,42,58,.5);
+    vertical-align:middle;
+  }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,.015); }
+
+  .badge {
+    display:inline-flex;align-items:center;gap:4px;
+    padding:3px 10px;border-radius:100px;font-size:.72rem;font-weight:500;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .badge::before { content:'●';font-size:.45rem; }
+  .badge.approved { background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.25); }
+  .badge.pending  { background:rgba(255,107,53,.1);color:var(--warn);border:1px solid rgba(255,107,53,.25); }
+  .badge.active   { background:rgba(0,153,255,.1);color:var(--accent2);border:1px solid rgba(0,153,255,.25); }
+  .badge.admin    { background:rgba(255,107,53,.15);color:var(--warn);border:1px solid rgba(255,107,53,.3); }
+  .badge.user     { background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--border); }
+
+  .action-btns { display:flex;gap:6px;flex-wrap:wrap; }
+  .btn {
+    padding:6px 12px;border-radius:7px;font-size:.775rem;font-weight:500;
+    cursor:pointer;border:1px solid transparent;font-family:inherit;transition:all .2s;
+  }
+  .btn-approve { background:rgba(0,229,160,.1);color:var(--accent);border-color:rgba(0,229,160,.25); }
+  .btn-approve:hover { background:rgba(0,229,160,.2); }
+  .btn-revoke  { background:rgba(255,107,53,.1);color:var(--warn);border-color:rgba(255,107,53,.25); }
+  .btn-revoke:hover  { background:rgba(255,107,53,.2); }
+  .btn-admin   { background:rgba(0,153,255,.1);color:var(--accent2);border-color:rgba(0,153,255,.25); }
+  .btn-admin:hover   { background:rgba(0,153,255,.2); }
+  .btn-delete  { background:rgba(255,68,68,.08);color:var(--error);border-color:rgba(255,68,68,.2); }
+  .btn-delete:hover  { background:rgba(255,68,68,.18); }
+  .btn:disabled { opacity:.4;cursor:not-allowed; }
+
+  .toast {
+    position:fixed;bottom:24px;right:24px;z-index:9999;
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:14px 20px;font-size:.875rem;
+    box-shadow:0 8px 32px rgba(0,0,0,.5);transform:translateY(100px);opacity:0;
+    transition:all .3s;pointer-events:none;max-width:320px;
+  }
+  .toast.show { transform:translateY(0);opacity:1; }
+  .toast.success { border-color:rgba(0,229,160,.4); }
+  .toast.error   { border-color:rgba(255,68,68,.4); }
+
+  /* log table */
+  .log-action {
+    font-family:'JetBrains Mono',monospace;font-size:.72rem;
+    padding:3px 8px;border-radius:5px;background:rgba(255,255,255,.04);
+    border:1px solid var(--border);
+  }
+  .log-time { font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted); }
+
+  .empty { padding:40px;text-align:center;color:var(--muted);font-size:.875rem; }
+
+  .refresh-btn {
+    padding:8px 14px;border-radius:9px;border:1px solid var(--border);
+    background:transparent;color:var(--muted);font-size:.8rem;cursor:pointer;
+    font-family:inherit;transition:all .2s;
+  }
+  .refresh-btn:hover { border-color:var(--accent);color:var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <aside>
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">SmartVision</div>
+        <div class="logo-sub">Admin Panel</div>
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="sname" id="sidebarName">Loading…</div>
+      <div class="srole">ADMINISTRATOR</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="/dashboard"><span>📊</span> Dashboard</a>
+      <a class="nav-item active" href="/admin"><span>🛡️</span> Admin Panel</a>
+      <a class="nav-item" href="/"><span>🏠</span> Home</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">⏻ Log Out</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="page-header">
+      <div>
+        <div class="page-title">Admin Panel</div>
+        <div class="page-sub">Manage users, permissions and activity</div>
+      </div>
+      <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-num" id="sTotal">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Approved</div>
+        <div class="stat-num" id="sApproved" style="color:var(--accent)">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pending</div>
+        <div class="stat-num" id="sPending" style="color:var(--warn)">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Now</div>
+        <div class="stat-num" id="sActive" style="color:var(--accent2)">—</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('users',this)">👥 Users</button>
+      <button class="tab-btn" onclick="switchTab('pending',this)">⏳ Pending Approval</button>
+      <button class="tab-btn" onclick="switchTab('logs',this)">📋 Activity Logs</button>
+    </div>
+
+    <!-- Users tab -->
+    <div class="tab-panel active" id="tab-users">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Users</span>
+          <input class="search-bar" type="text" placeholder="Search by name or phone…" oninput="filterTable('userTable', this.value)">
+        </div>
+        <div class="table-wrap">
+          <table id="userTable">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Logins</th>
+                <th>Last Seen</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="userBody">
+              <tr><td colspan="7" class="empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending tab -->
+    <div class="tab-panel" id="tab-pending">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Pending Approval</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Registered</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pendingBody">
+              <tr><td colspan="4" class="empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logs tab -->
+    <div class="tab-panel" id="tab-logs">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recent Activity</span>
+          <input class="search-bar" type="text" placeholder="Search logs…" oninput="filterTable('logTable', this.value)">
+        </div>
+        <div class="table-wrap">
+          <table id="logTable">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Action</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody id="logBody">
+              <tr><td colspan="5" class="empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Tab ────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `toast show ${type}`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Auth check ─────────────────────────────────────────────────
+async function init() {
+  try {
+    const r = await fetch('/api/auth/me');
+    if (!r.ok) { window.location.href = '/'; return; }
+    const d = await r.json();
+    if (d.role !== 'admin') { window.location.href = '/dashboard'; return; }
+    document.getElementById('sidebarName').textContent = d.name;
+  } catch { window.location.href = '/'; }
+}
+
+// ── Stats ──────────────────────────────────────────────────────
+async function loadStats() {
+  const r = await fetch('/api/admin/stats');
+  if (!r.ok) return;
+  const d = await r.json();
+  document.getElementById('sTotal').textContent    = d.total;
+  document.getElementById('sApproved').textContent = d.approved;
+  document.getElementById('sPending').textContent  = d.pending;
+  document.getElementById('sActive').textContent   = d.active;
+}
+
+// ── Users ──────────────────────────────────────────────────────
+async function loadUsers() {
+  const r = await fetch('/api/admin/users');
+  if (!r.ok) return;
+  const users = await r.json();
+  renderUsers(users);
+  renderPending(users.filter(u => !u.approved));
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('userBody');
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">No users yet.</td></tr>'; return; }
+  tbody.innerHTML = users.map(u => `
+    <tr data-search="${u.name?.toLowerCase()} ${u.phone}">
+      <td>${u.name}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem">${u.phone}</td>
+      <td><span class="badge ${u.role}">${u.role}</span></td>
+      <td>
+        ${u.active ? '<span class="badge active">ONLINE</span>' : ''}
+        <span class="badge ${u.approved ? 'approved' : 'pending'}">${u.approved ? 'APPROVED' : 'PENDING'}</span>
+      </td>
+      <td style="font-family:'JetBrains Mono',monospace">${u.loginCount ?? 0}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}</td>
+      <td>
+        <div class="action-btns">
+          ${!u.approved
+            ? `<button class="btn btn-approve" onclick="approveUser('${u._id}')">Approve</button>`
+            : `<button class="btn btn-revoke"  onclick="revokeUser('${u._id}')">Revoke</button>`}
+          ${u.role === 'user'
+            ? `<button class="btn btn-admin"  onclick="changeRole('${u._id}','admin')">Make Admin</button>`
+            : `<button class="btn btn-revoke" onclick="changeRole('${u._id}','user')">Remove Admin</button>`}
+          <button class="btn btn-delete" onclick="deleteUser('${u._id}', '${u.name}')">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderPending(users) {
+  const tbody = document.getElementById('pendingBody');
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">No pending approvals.</td></tr>'; return; }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>${u.name}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem">${u.phone}</td>
+      <td style="font-size:.8rem;color:var(--muted)">${new Date(u.createdAt).toLocaleString()}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-approve" onclick="approveUser('${u._id}')">✓ Approve</button>
+          <button class="btn btn-delete"  onclick="deleteUser('${u._id}','${u.name}')">✕ Reject</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── Logs ───────────────────────────────────────────────────────
+async function loadLogs() {
+  const r = await fetch('/api/admin/logs');
+  if (!r.ok) return;
+  const logs = await r.json();
+  const tbody = document.getElementById('logBody');
+  if (!logs.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">No logs yet.</td></tr>'; return; }
+  tbody.innerHTML = logs.map(l => `
+    <tr data-search="${l.name?.toLowerCase()} ${l.phone} ${l.action?.toLowerCase()}">
+      <td class="log-time">${new Date(l.timestamp).toLocaleString()}</td>
+      <td>${l.name || '—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:.78rem">${l.phone || '—'}</td>
+      <td><span class="log-action">${l.action}</span></td>
+      <td style="font-size:.78rem;color:var(--muted)">${l.ip}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Actions ────────────────────────────────────────────────────
+async function approveUser(id) {
+  const r = await fetch(`/api/admin/users/${id}/approve`, { method: 'PATCH' });
+  if (r.ok) { toast('User approved ✓'); loadAll(); } else toast('Error', 'error');
+}
+async function revokeUser(id) {
+  const r = await fetch(`/api/admin/users/${id}/revoke`, { method: 'PATCH' });
+  if (r.ok) { toast('Access revoked'); loadAll(); } else toast('Error', 'error');
+}
+async function changeRole(id, role) {
+  const r = await fetch(`/api/admin/users/${id}/role`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  if (r.ok) { toast(`Role changed to ${role}`); loadAll(); } else toast('Error', 'error');
+}
+async function deleteUser(id, name) {
+  if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
+  const r = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+  if (r.ok) { toast('User deleted'); loadAll(); } else toast('Error', 'error');
+}
+
+// ── Filter table ───────────────────────────────────────────────
+function filterTable(tableId, query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll(`#${tableId} tbody tr`).forEach(tr => {
+    const text = (tr.dataset.search || tr.textContent).toLowerCase();
+    tr.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+
+function loadAll() { loadStats(); loadUsers(); loadLogs(); }
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/';
+}
+
+init().then(loadAll);
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>
