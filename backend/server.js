@@ -123,6 +123,16 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function parseFromAddress(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(.*?)<([^>]+)>$/);
+  if (!match) return { email: raw, name: '' };
+  return {
+    name: match[1].replace(/^"|"$/g, '').trim(),
+    email: match[2].trim(),
+  };
+}
+
 let cachedTransporter;
 function getMailer() {
   if (cachedTransporter) return cachedTransporter;
@@ -157,44 +167,77 @@ function getMailer() {
 async function sendEmailOTP(email, otp, purpose, name) {
   const transporter = getMailer();
   const from = process.env.MAIL_FROM || process.env.GMAIL_USER || process.env.SMTP_USER;
+  const brevoApiKey = process.env.BREVO_API_KEY;
+  const fromAddress = parseFromAddress(from);
 
-  if (!transporter || !from) {
+  if (!from) {
     console.warn(`Email OTP not configured for ${email}. OTP: ${otp}`);
     return true;
   }
 
   const actionLabel = purpose === 'register' ? 'complete your WatchWatt signup' : 'sign in to WatchWatt';
+  const text = [
+    `Hello${name ? ` ${name}` : ''},`,
+    '',
+    `Use this code to ${actionLabel}: ${otp}`,
+    'This code will expire in 5 minutes.',
+    '',
+    'If you did not request this, you can ignore this email.',
+  ].join('\n');
+  const html = `
+    <div style="font-family:Arial,sans-serif;background:#f4fbf8;padding:24px;color:#153229">
+      <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:18px;padding:32px;border:1px solid #d9efe4">
+        <div style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#2eb67d;margin-bottom:14px">WatchWatt</div>
+        <h1 style="margin:0 0 10px;font-size:28px;color:#16372d">Verification code</h1>
+        <p style="margin:0 0 20px;line-height:1.6;color:#4f6a61">
+          Hello${name ? ` ${name}` : ''}, use the code below to ${actionLabel}.
+        </p>
+        <div style="font-size:34px;font-weight:700;letter-spacing:.3em;background:#eff9f3;border:1px solid #cae7d8;border-radius:16px;padding:18px 22px;text-align:center;color:#18a06a">
+          ${otp}
+        </div>
+        <p style="margin:20px 0 0;line-height:1.6;color:#4f6a61">
+          This code expires in 5 minutes. If you did not request it, you can ignore this email.
+        </p>
+      </div>
+    </div>
+  `;
 
   try {
+    if (brevoApiKey) {
+      await axios.post(
+        'https://api.brevo.com/v3/smtp/email',
+        {
+          sender: {
+            name: fromAddress.name || 'WatchWatt',
+            email: fromAddress.email,
+          },
+          to: [{ email }],
+          subject: `Your WatchWatt verification code: ${otp}`,
+          textContent: text,
+          htmlContent: html,
+        },
+        {
+          timeout: 15000,
+          headers: {
+            'api-key': brevoApiKey,
+            'content-type': 'application/json',
+          },
+        }
+      );
+      return true;
+    }
+
+    if (!transporter) {
+      console.warn(`Email transporter not configured for ${email}. OTP: ${otp}`);
+      return true;
+    }
+
     await transporter.sendMail({
       from,
       to: email,
       subject: `Your WatchWatt verification code: ${otp}`,
-      text: [
-        `Hello${name ? ` ${name}` : ''},`,
-        '',
-        `Use this code to ${actionLabel}: ${otp}`,
-        'This code will expire in 5 minutes.',
-        '',
-        'If you did not request this, you can ignore this email.',
-      ].join('\n'),
-      html: `
-        <div style="font-family:Arial,sans-serif;background:#f4fbf8;padding:24px;color:#153229">
-          <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:18px;padding:32px;border:1px solid #d9efe4">
-            <div style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#2eb67d;margin-bottom:14px">WatchWatt</div>
-            <h1 style="margin:0 0 10px;font-size:28px;color:#16372d">Verification code</h1>
-            <p style="margin:0 0 20px;line-height:1.6;color:#4f6a61">
-              Hello${name ? ` ${name}` : ''}, use the code below to ${actionLabel}.
-            </p>
-            <div style="font-size:34px;font-weight:700;letter-spacing:.3em;background:#eff9f3;border:1px solid #cae7d8;border-radius:16px;padding:18px 22px;text-align:center;color:#18a06a">
-              ${otp}
-            </div>
-            <p style="margin:20px 0 0;line-height:1.6;color:#4f6a61">
-              This code expires in 5 minutes. If you did not request it, you can ignore this email.
-            </p>
-          </div>
-        </div>
-      `,
+      text,
+      html,
     });
     return true;
   } catch (err) {
