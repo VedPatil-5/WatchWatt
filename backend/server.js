@@ -5,7 +5,6 @@
  */
 
 const dns = require('dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 require('dotenv').config({ path: '../.env' });
 const express = require('express');
@@ -22,6 +21,13 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Railway sits behind a proxy, and express-rate-limit needs this to see client IPs safely.
+app.set('trust proxy', 1);
+
+if (process.env.NODE_ENV !== 'production') {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+}
 
 mongoose.connect(process.env.MONGO_URI).then(() => {
   console.log('MongoDB connected');
@@ -134,6 +140,11 @@ function getMailer() {
         port,
         secure: port === 465,
         auth: { user, pass },
+        requireTLS: port !== 465,
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000,
+        tls: { servername: host },
       })
     : nodemailer.createTransport({
         service: 'gmail',
