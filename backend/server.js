@@ -456,9 +456,41 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
   res.json({ total, approved, active, pending });
 });
 
-app.get('/api/stream/detection', requireAuth, (req, res) => {
+app.get('/api/stream/detection', requireAuth, async (req, res) => {
   const streamUrl = process.env.FLASK_STREAM_URL || 'http://localhost:5000/detection_feed';
-  res.redirect(streamUrl);
+
+  try {
+    const upstream = await axios.get(streamUrl, {
+      responseType: 'stream',
+      timeout: 15000,
+      headers: {
+        ...getDetectionHeaders(),
+        'ngrok-skip-browser-warning': '1',
+      },
+    });
+
+    res.setHeader('Content-Type', upstream.headers['content-type'] || 'multipart/x-mixed-replace; boundary=frame');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    upstream.data.on('error', () => {
+      if (!res.headersSent) {
+        res.status(502).end('Detection stream unavailable');
+      } else {
+        res.end();
+      }
+    });
+
+    req.on('close', () => {
+      upstream.data.destroy();
+    });
+
+    upstream.data.pipe(res);
+  } catch (error) {
+    console.error('Detection stream proxy error:', error.message);
+    res.status(502).send('Detection stream unavailable');
+  }
 });
 
 app.get('/api/system/status', requireAuth, async (req, res) => {
