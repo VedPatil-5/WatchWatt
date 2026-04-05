@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detailed 3D Classroom</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div class="overlay">
+      <div class="controls-panel">
+        <p class="controls-title">Light Switches</p>
+        <div class="controls-grid" id="light-controls"></div>
+      </div>
+    </div>
+    <canvas id="scene"></canvas>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
