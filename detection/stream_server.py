@@ -110,7 +110,7 @@ NUMPAD_MAP: dict[int, tuple[str, str]] = {
 @dataclass
 class Config:
     # Camera
-    camera_index: int   = 0
+    camera_index: int   = 1
     frame_width:  int   = 640
     frame_height: int   = 480
 
