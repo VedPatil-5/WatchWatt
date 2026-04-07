@@ -262,9 +262,13 @@ function getDetectionBaseUrl() {
 }
 
 function getDetectionHeaders() {
-  return process.env.DETECTION_CONTROL_TOKEN
-    ? { 'X-Control-Token': process.env.DETECTION_CONTROL_TOKEN }
-    : {};
+  return {
+    ...(process.env.DETECTION_CONTROL_TOKEN
+      ? { 'X-Control-Token': process.env.DETECTION_CONTROL_TOKEN }
+      : {}),
+    'ngrok-skip-browser-warning': '1',
+    'localtonet-skip-warning': '1',
+  };
 }
 
 app.post('/api/auth/register', otpLimiter, async (req, res) => {
@@ -463,10 +467,7 @@ app.get('/api/stream/detection', requireAuth, async (req, res) => {
     const upstream = await axios.get(streamUrl, {
       responseType: 'stream',
       timeout: 15000,
-      headers: {
-        ...getDetectionHeaders(),
-        'ngrok-skip-browser-warning': '1',
-      },
+      headers: getDetectionHeaders(),
     });
 
     res.setHeader('Content-Type', upstream.headers['content-type'] || 'multipart/x-mixed-replace; boundary=frame');
