@@ -181,7 +181,7 @@ Now open http://localhost:3000 in your browser.
 
 ---
 
-## STEP 9 — Deploy Online with Railway + ngrok
+## STEP 9 — Deploy Online with Railway + Tunnel
 
 ### Option A — Railway (Recommended, free tier available)
 
@@ -191,7 +191,35 @@ Now open http://localhost:3000 in your browser.
 4. Railway gives you a public URL like `https://smartvision-production.up.railway.app`
 5. Update `FRONTEND_URL` in Railway variables to your Railway URL
 
-### Option B — ngrok (Quick local tunneling)
+### Option B — LocaltoNet (Recommended for this project)
+
+Use Railway for the public website and expose only the Flask detection server from your local machine.
+
+1. Sign in to [LocaltoNet](https://localtonet.com/)
+2. Install the LocaltoNet client on the computer running `detection/stream_server.py`
+3. Create an `HTTP` tunnel to local port `5000`
+4. Start the Flask server locally:
+
+```bash
+cd smart-energy-system/detection
+source venv/bin/activate      # or venv\Scripts\activate on Windows
+python stream_server.py
+```
+
+5. Start the LocaltoNet tunnel and copy the public URL, for example:
+   `https://abc123.localto.net`
+6. In Railway Variables, update:
+
+```env
+FRONTEND_URL=https://watchwatt-production.up.railway.app
+FLASK_STREAM_URL=https://abc123.localto.net/detection_feed
+NODE_ENV=production
+```
+
+7. Redeploy or restart the Railway service
+8. Open the Railway site and test the stream from a different network
+
+### Option C — ngrok (Quick local tunneling)
 
 ```bash
 # Install ngrok: https://ngrok.com/download
@@ -205,10 +233,11 @@ ngrok http 5000
 # You get another URL like: https://def456.ngrok-free.app
 ```
 
-Then update your `.env`:
+Then update your `.env` or Railway variables:
 ```env
-FRONTEND_URL=https://abc123.ngrok-free.app
+FRONTEND_URL=https://watchwatt-production.up.railway.app
 FLASK_STREAM_URL=https://def456.ngrok-free.app/detection_feed
+NODE_ENV=production
 ```
 
 Restart both servers after changing `.env`.

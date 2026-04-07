@@ -545,6 +545,10 @@ app.post('/api/system/lights/auto', requireAuth, async (req, res) => {
   }
 });
 
+app.get('/health', (_, res) => {
+  res.status(200).json({ ok: true });
+});
+
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'frontend', 'views', 'index.html')));
 app.get('/dashboard', (_, res) => res.sendFile(path.join(__dirname, 'frontend', 'views', 'dashboard.html')));
 app.get('/admin', (_, res) => res.sendFile(path.join(__dirname, 'frontend', 'views', 'admin.html')));
@@ -555,4 +559,6 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on 0.0.0.0:${PORT}`);
+});
